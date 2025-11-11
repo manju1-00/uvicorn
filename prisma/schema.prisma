@@ -2,11 +2,115 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  FACULTY
+  VIEWER
+}
+
+enum PublicationType {
+  JOURNAL
+  CONFERENCE
+}
+
+enum DatabaseSource {
+  DBLP
+  GOOGLE_SCHOLAR
+  OPENALEX
+  MANUAL
+}
+
+enum ScanStatus {
+  QUEUED
+  SCANNING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      UserRole @default(FACULTY)
+  department String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions  UserSession[]
+}
+
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Faculty {
+  id                String           @id @default(cuid())
+  name              String
+  email             String           @unique
+  department        String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  publications      Publication[]
+  plagiarismScans   PlagiarismScan[]
+}
+
+model Publication {
+  id                String           @id @default(cuid())
+  title             String
+  authors           String           // JSON array of author names
+  year              Int
+  type              PublicationType
+  venue             String           // Journal name or conference name
+  volume            String?
+  issue             String?
+  pages             String?
+  doi               String?
+  url               String?
+  abstract          String?
+  source            DatabaseSource
+  facultyId         String
+  faculty           Faculty           @relation(fields: [facultyId], references: [id])
+  plagiarismScanId  String?
+  plagiarismScan    PlagiarismScan?   @relation(fields: [plagiarismScanId], references: [id])
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([facultyId])
+  @@index([doi])
+  @@index([year])
+  @@index([type])
+}
+
+model PlagiarismScan {
+  id                    String     @id @default(cuid())
+  publicationId         String?
+  facultyId             String
+  scanId                String     // External service scan ID
+  service               String     // COPYLEAKS | GRAMMARLY | INTERNAL
+  status                ScanStatus @default(QUEUED)
+  originalityScore      Float?
+  similarityPercentage  Float?
+  sources               Json?      // Array of similar sources
+  reportUrl             String?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  publication           Publication? @relation(fields: [publicationId], references: [id])
+  faculty               Faculty     @relation(fields: [facultyId], references: [id])
+
+  @@index([facultyId])
+  @@index([scanId])
+  @@index([status])
 }
