@@ -83,8 +83,7 @@ model Publication {
   source            DatabaseSource
   facultyId         String
   faculty           Faculty           @relation(fields: [facultyId], references: [id])
-  plagiarismScanId  String?
-  plagiarismScan    PlagiarismScan?   @relation(fields: [plagiarismScanId], references: [id])
+  plagiarismScan    PlagiarismScan?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
