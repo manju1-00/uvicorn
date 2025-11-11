@@ -95,7 +95,7 @@ model Publication {
 
 model PlagiarismScan {
   id                    String     @id @default(cuid())
-  publicationId         String?
+  publicationId         String?    @unique
   facultyId             String
   scanId                String     // External service scan ID
   service               String     // COPYLEAKS | GRAMMARLY | INTERNAL
